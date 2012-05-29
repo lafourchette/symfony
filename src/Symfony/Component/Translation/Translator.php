@@ -191,6 +191,8 @@ class Translator implements TranslatorInterface
 
         if ($fallback != $locale) {
             $this->catalogues[$locale]->addFallbackCatalogue($this->catalogues[$fallback]);
+            
+            $this->addFallbackCatalogue($fallback);
         }
     }
 }

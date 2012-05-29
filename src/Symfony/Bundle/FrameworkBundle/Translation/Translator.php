@@ -77,6 +77,17 @@ class Translator extends BaseTranslator
     }
 
     /**
+     * returns path to cache file for this catalogue
+     *  
+     * @param string $locale
+     * @return string
+     */
+    private function getConfigCacheFilePath($locale)
+    {
+        return $this->options['cache_dir'].'/catalogue.'.$locale.'.php';
+    }
+    
+    /**
      * {@inheritdoc}
      */
     protected function loadCatalogue($locale)
@@ -91,7 +102,7 @@ class Translator extends BaseTranslator
             return parent::loadCatalogue($locale);
         }
 
-        $cache = new ConfigCache($this->options['cache_dir'].'/catalogue.'.$locale.'.php', $this->options['debug']);
+        $cache = new ConfigCache($this->getConfigCacheFilePath($locale), $this->options['debug']);
         if (!$cache->isFresh()) {
             $this->initialize();
 
@@ -100,12 +111,14 @@ class Translator extends BaseTranslator
             $fallbackContent = '';
             $fallback = $this->computeFallbackLocale($locale);
             if ($fallback && $fallback != $locale) {
+                $this->loadCatalogue($fallback);
+                
+                
                 $fallbackContent = sprintf(<<<EOF
-\$catalogue->addFallbackCatalogue(new MessageCatalogue('%s', %s));
+\$catalogue->addFallbackCatalogue(include '%s');
 EOF
                     ,
-                    $fallback,
-                    var_export($this->catalogues[$fallback]->all(), true)
+                    $this->getConfigCacheFilePath($fallback)
                 );
             }
 
