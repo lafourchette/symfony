@@ -115,7 +115,7 @@ class Translator extends BaseTranslator
                 
                 
                 $fallbackContent = sprintf(<<<EOF
-\$catalogue->addFallbackCatalogue(include '%s');
+\$catalogue${locale}->addFallbackCatalogue(include '%s');
 EOF
                     ,
                     $this->getConfigCacheFilePath($fallback)
@@ -127,11 +127,11 @@ EOF
 
 use Symfony\Component\Translation\MessageCatalogue;
 
-\$catalogue = new MessageCatalogue('%s', %s);
+\$catalogue${locale} = new MessageCatalogue('%s', %s);
 
 %s
 
-return \$catalogue;
+return \$catalogue${locale};
 
 EOF
                 ,
