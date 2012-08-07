@@ -158,7 +158,7 @@ class StubNumberFormatter
      *
      * @var array
      */
-    static private $supportedStyles = array(
+    private static $supportedStyles = array(
         'CURRENCY' => self::CURRENCY,
         'DECIMAL'  => self::DECIMAL
     );
@@ -168,7 +168,7 @@ class StubNumberFormatter
      *
      * @var array
      */
-    static private $supportedAttributes = array(
+    private static $supportedAttributes = array(
         'FRACTION_DIGITS' => self::FRACTION_DIGITS,
         'GROUPING_USED'   => self::GROUPING_USED,
         'ROUNDING_MODE'   => self::ROUNDING_MODE
@@ -181,7 +181,7 @@ class StubNumberFormatter
      *
      * @var array
      */
-    static private $roundingModes = array(
+    private static $roundingModes = array(
         'ROUND_HALFEVEN' => self::ROUND_HALFEVEN,
         'ROUND_HALFDOWN' => self::ROUND_HALFDOWN,
         'ROUND_HALFUP'   => self::ROUND_HALFUP
@@ -195,7 +195,7 @@ class StubNumberFormatter
      *
      * @var array
      */
-    static private $phpRoundingMap = array(
+    private static $phpRoundingMap = array(
         self::ROUND_HALFDOWN => \PHP_ROUND_HALF_DOWN,
         self::ROUND_HALFEVEN => \PHP_ROUND_HALF_EVEN,
         self::ROUND_HALFUP   => \PHP_ROUND_HALF_UP
@@ -206,7 +206,7 @@ class StubNumberFormatter
      *
      * @var array
      */
-    static private $int32Range = array(
+    private static $int32Range = array(
         'positive' => 2147483647,
         'negative' => -2147483648
     );
@@ -216,7 +216,7 @@ class StubNumberFormatter
      *
      * @var array
      */
-    static private $int64Range = array(
+    private static $int64Range = array(
         'positive' => 9223372036854775807,
         'negative' => -9223372036854775808
     );
@@ -274,7 +274,7 @@ class StubNumberFormatter
      * @throws MethodArgumentValueNotImplementedException  When the $style is not supported
      * @throws MethodArgumentNotImplementedException       When the pattern value is different than null
      */
-    static public function create($locale = 'en', $style = null, $pattern = null)
+    public static function create($locale = 'en', $style = null, $pattern = null)
     {
         return new self($locale, $style, $pattern);
     }
@@ -819,6 +819,8 @@ class StubNumberFormatter
      * @param mixed $value The value to be converted
      *
      * @return int|float       The converted value
+     *
+     * @see https://bugs.php.net/bug.php?id=59597 Bug #59597
      */
     private function getInt64Value($value)
     {
@@ -827,11 +829,33 @@ class StubNumberFormatter
         }
 
         if (PHP_INT_SIZE !== 8 && ($value > self::$int32Range['positive'] || $value <= self::$int32Range['negative'])) {
+            // Bug #59597 was fixed on PHP 5.3.14 and 5.4.4
+            // The negative PHP_INT_MAX was being converted to float
+            if (
+                $value == self::$int32Range['negative'] &&
+                (
+                    (version_compare(PHP_VERSION, '5.4.0', '<') && version_compare(PHP_VERSION, '5.3.14', '>=')) ||
+                    version_compare(PHP_VERSION, '5.4.4', '>=')
+                )
+            ) {
+                return (int) $value;
+            }
+
             return (float) $value;
         }
 
-        if (PHP_INT_SIZE === 8 && ($value > self::$int32Range['positive'] || $value < self::$int32Range['negative'])) {
-            $value = (-2147483648 - ($value % -2147483648)) * ($value / abs($value));
+        if (PHP_INT_SIZE === 8) {
+            // Bug #59597 was fixed on PHP 5.3.14 and 5.4.4
+            // A 32 bit integer was being generated instead of a 64 bit integer
+            if (
+                  ($value > self::$int32Range['positive'] || $value < self::$int32Range['negative']) &&
+                  (
+                      (version_compare(PHP_VERSION, '5.3.14', '<')) ||
+                      (version_compare(PHP_VERSION, '5.4.0', '>=') && version_compare(PHP_VERSION, '5.4.4', '<'))
+                  )
+            ) {
+                $value = (-2147483648 - ($value % -2147483648)) * ($value / abs($value));
+            }
         }
 
         return (int) $value;

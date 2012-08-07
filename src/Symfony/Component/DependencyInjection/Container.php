@@ -218,8 +218,8 @@ class Container implements ContainerInterface
     /**
      * Gets a service.
      *
-     * If a service is both defined through a set() method and
-     * with a set*Service() method, the former has always precedence.
+     * If a service is defined both through a set() method and
+     * with a get{$id}Service() method, the former has always precedence.
      *
      * @param string  $id              The service identifier
      * @param integer $invalidBehavior The behavior when the service does not exist
@@ -274,7 +274,7 @@ class Container implements ContainerInterface
         $ids = array();
         $r = new \ReflectionClass($this);
         foreach ($r->getMethods() as $method) {
-            if (preg_match('/^get(.+)Service$/', $method->getName(), $match)) {
+            if (preg_match('/^get(.+)Service$/', $method->name, $match)) {
                 $ids[] = self::underscore($match[1]);
             }
         }
@@ -440,7 +440,7 @@ class Container implements ContainerInterface
      *
      * @return string The camelized string
      */
-    static public function camelize($id)
+    public static function camelize($id)
     {
         return preg_replace_callback('/(^|_|\.)+(.)/', function ($match) { return ('.' === $match[1] ? '_' : '').strtoupper($match[2]); }, $id);
     }
@@ -452,7 +452,7 @@ class Container implements ContainerInterface
      *
      * @return string The underscored string
      */
-    static public function underscore($id)
+    public static function underscore($id)
     {
         return strtolower(preg_replace(array('/([A-Z]+)([A-Z][a-z])/', '/([a-z\d])([A-Z])/'), array('\\1_\\2', '\\1_\\2'), strtr($id, '_', '.')));
     }

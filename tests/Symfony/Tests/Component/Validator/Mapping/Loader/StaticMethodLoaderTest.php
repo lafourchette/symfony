@@ -57,11 +57,26 @@ class StaticMethodLoaderTest extends \PHPUnit_Framework_TestCase
         $loader->loadClassMetadata($metadata);
         $this->assertSame(1, count($metadata->getConstraints()));
     }
+
+    public function testLoadClassMetadataIgnoresInterfaces()
+    {
+        $loader = new StaticMethodLoader('loadMetadata');
+        $metadata = new ClassMetadata(__NAMESPACE__.'\StaticLoaderInterface');
+
+        $loader->loadClassMetadata($metadata);
+
+        $this->assertSame(0, count($metadata->getConstraints()));
+    }
+}
+
+interface StaticLoaderInterface
+{
+    public static function loadMetadata(ClassMetadata $metadata);
 }
 
 class StaticLoaderEntity
 {
-    static public $invokedWith = null;
+    public static $invokedWith = null;
 
     public static function loadMetadata(ClassMetadata $metadata)
     {
@@ -75,7 +90,7 @@ class StaticLoaderDocument extends BaseStaticLoaderDocument
 
 class BaseStaticLoaderDocument
 {
-    static public function loadMetadata(ClassMetadata $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->addConstraint(new ConstraintA());
     }

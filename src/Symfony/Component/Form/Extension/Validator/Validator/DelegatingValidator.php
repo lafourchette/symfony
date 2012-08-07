@@ -66,14 +66,18 @@ class DelegatingValidator implements FormValidatorInterface
                         foreach ($propertyPath->getElements() as $element) {
                             $children = $child->getChildren();
                             if (!isset($children[$element])) {
-                                $form->addError($error);
+                                if ($form->isSynchronized()) {
+                                    $form->addError($error);
+                                }
                                 break;
                             }
 
                             $child = $children[$element];
                         }
 
-                        $child->addError($error);
+                        if ($child->isSynchronized()) {
+                            $child->addError($error);
+                        }
                     }
                 }
             } elseif (count($violations = $this->validator->validate($form))) {
@@ -85,12 +89,16 @@ class DelegatingValidator implements FormValidatorInterface
 
                     foreach ($mapping as $mappedPath => $child) {
                         if (preg_match($mappedPath, $propertyPath)) {
-                            $child->addError($error);
+                            if ($child->isSynchronized()) {
+                                $child->addError($error);
+                            }
                             continue 2;
                         }
                     }
 
-                    $form->addError($error);
+                    if ($form->isSynchronized()) {
+                        $form->addError($error);
+                    }
                 }
             }
         }
@@ -104,7 +112,7 @@ class DelegatingValidator implements FormValidatorInterface
      * @param FormInterface    $form    The validated form
      * @param ExecutionContext $context The current validation context
      */
-    static public function validateFormData(FormInterface $form, ExecutionContext $context)
+    public static function validateFormData(FormInterface $form, ExecutionContext $context)
     {
         if (is_object($form->getData()) || is_array($form->getData())) {
             $propertyPath = $context->getPropertyPath();
@@ -127,7 +135,7 @@ class DelegatingValidator implements FormValidatorInterface
         }
     }
 
-    static protected function getFormValidationGroups(FormInterface $form)
+    protected static function getFormValidationGroups(FormInterface $form)
     {
         $groups = null;
 
