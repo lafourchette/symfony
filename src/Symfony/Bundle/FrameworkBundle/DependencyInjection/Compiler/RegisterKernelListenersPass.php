@@ -32,12 +32,10 @@ class RegisterKernelListenersPass implements CompilerPassInterface
                     throw new \InvalidArgumentException(sprintf('Service "%s" must define the "event" attribute on "kernel.event_listener" tags.', $id));
                 }
 
-                if (!isset($event['method'])) {
-                    $event['method'] = 'on'.preg_replace(array(
-                        '/(?<=\b)[a-z]/ie',
-                        '/[^a-z0-9]/i'
-                    ), array('strtoupper("\\0")', ''), $event['event']);
-                }
+                $sanitizedString = 'on'.preg_replace_callback('/(?<=\b)[a-z]/i', function($matches) {
+                    return strtoupper($matches[0]);
+                }, $event['event']);
+                $event['event'] = preg_replace('/[^a-z0-9]/i', '', $sanitizedString);
 
                 $definition->addMethodCall('addListenerService', array($event['event'], array($id, $event['method']), $priority));
             }
